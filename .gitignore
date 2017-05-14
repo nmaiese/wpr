@@ -17,3 +17,6 @@ venv/
 
 # MacOSX files
 .DS_Store
+
+#
+.csv
