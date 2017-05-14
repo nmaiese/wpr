@@ -1,9 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
-from tqdm import tqdm
-import csv
 import pandas as pd
 import sys
+import json
+import networkx as nx
+import community
+from networkx.readwrite import json_graph
+
 
 IGNORED_HREF = ['#', 'javascript:;', 'javascript:void(0)']
 
@@ -102,47 +105,53 @@ class WPR(object):
 
 
 if __name__ == "__main__":
-    base_url = 'https://enigaseluce.com'
-    #base_url = 'https://www.groupm.com'
-    #base_url = 'http://www.ircouncil.it/'
+    #base_url = 'https://enigaseluce.com'
+    base_url = 'https://www.groupm.com'
+    base_url = 'http://www.ircouncil.it/'
     wpr = WPR(base_url)
-    wpr.navigate_website('/', 4)
-
+    wpr.navigate_website('/', 2)
     pd.DataFrame(wpr.connections).to_csv(wpr.domain + '.csv', encoding='utf-8')
 
 
+    wpr.connections = pd.DataFrame.from_csv(wpr.domain + '.csv')
+
+    # read graph from dataframe
+    G = nx.from_pandas_dataframe(wpr.connections, 'source', 'target')
+    part = community.best_partition(G)
+
+    for ix, deg in G.degree().items():
+        G.node[ix]['degree'] = deg
+        G.node[ix]['parity'] = (1 - deg % 2)
+
+
+    for ix, node in part.items():
+        G.node[ix]['modularity'] = part[ix]
+
+
+    data = json_graph.node_link_data(G)
+    with open(wpr.domain + '.json', 'w') as f:
+        json.dump(data, f, indent=4)
 
 
 
-"""
-    soup = get_soup(base_url)
-    target_url = soup.findAll('a')
-    seed_targets = [get_internal_link(x, base_url) for x in target_url if get_internal_link(x, base_url)]
 
-    graph = [{'source': '/', 'target': x} for x in seed_targets]
-    visited_url = ['/']
 
-    counter = 1
-    depth = 3 # suppose
+# edges = wpr.connections
+# edges['id'] = edges.index
+# nodes = pd.DataFrame(list(edges['target']) + list(edges['source']), columns=['id'])
+# nodes = pd.DataFrame(nodes['id'].unique(), columns=['id'])
+# nodes['labels'] = nodes['id']
+#
+# l_edges = []
+# l_nodes = []
+#
+# for i, x in edges.iterrows():
+#     l_edges += [dict(x)]
+# for i, x in nodes.iterrows():
+#     l_nodes += [dict(x)]
+#
+# graph = {'nodes': l_nodes, 'edges' : l_edges}
+#
+# with open(wpr.domain + '.json', 'w') as f:
+#     json.dump(graph, f)
 
-    while counter <= depth:
-        print 'depth (' + str(counter) + '/' + str(depth) + ')'
-        partial_graph = []
-        for new_url in tqdm(graph):
-            new_base = new_url['target']
-            if new_base not in visited_url:
-                visited_url.append(new_base)
-                try:
-                    soup = get_soup(base_url+new_base)
-                    target_url = soup.findAll('a')
-                    seed_targets = [get_internal_link(x, base_url) for x in target_url if get_internal_link(x, base_url)]
-                    partial_graph += [{'source': new_base , 'target': x} for x in seed_targets]
-                except:
-                    print base_url+new_base + '\n Not Found'
-        graph += partial_graph
-
-    with open('out.csv', 'w+') as f:
-        writer = csv.DictWriter(f, fieldnames=graph[0].keys())
-        writer.writeheader()
-        [writer.writerow(x) for x in graph]
-        """

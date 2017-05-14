@@ -1,0 +1,49 @@
+<html>
+<head>
+<style>
+body {background: #6c6c6c }
+.node {stroke: #fff; stroke-width: 1.5px;}
+.link {stroke: #999; stroke-opacity: .6;}
+
+#d3-container {
+    width: 900px;
+    height: 500px;
+}
+
+div.tooltip {
+    position: absolute;
+    text-align: center;
+    padding: 5px 2px;
+    font: 14px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+
+</style>
+</head>
+<body>
+
+<div id="d3-container"> </div>
+
+
+<script src="assets/js/sigma.js"></script>
+<script src="assets/js/sigma.parsers.json.min.js"></script>
+<script src="https://d3js.org/d3.v4.js"></script>
+<!--<script src="graph.js"> </script>-->
+<script src="d3graph.js"> </script>
+
+<script>
+    var datum
+    setSize('#d3-container')
+    d3.json("ircouncil.it.json", function(error, data) {
+        datum = data
+        data.nodes = normalizeSize(data.nodes, min=5, max=20)
+        drawChart(data)
+    })
+</script>
+
+</body>
+</html>
