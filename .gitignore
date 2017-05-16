@@ -21,3 +21,6 @@ venv/
 #
 .csv
 .json
+
+#Data Folder
+data/

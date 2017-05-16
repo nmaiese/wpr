@@ -1,136 +1,224 @@
-// Add a method to the graph model that returns an
-// object with every neighbors of a node inside:
-
-var a
-var colors = [
-      '#617db4',
-      '#668f3c',
-      '#c6583e',
-      '#b956af',
-      '#FFE77C',
-      '#7766B9'
-    ];
+var node
+var link
+var simulation
 
 
-sigma.classes.graph.addMethod('neighbors', function(nodeId) {
-var k,
-    neighbors = {},
-    index = this.allNeighborsIndex[nodeId] || {};
+var width = Math.min(document.documentElement.clientWidth, window.innerWidth || 0)*70/100;
+var height = Math.min(document.documentElement.clientHeight, window.innerHeight || 0)-20;
 
-for (k in index)
-  neighbors[k] = this.nodesIndex[k];
+margin = {top:0, left:0, bottom:0, right:0 }
+chartWidth = width - (margin.left+margin.right)
+chartHeight = height - (margin.top+margin.bottom)
 
-return neighbors;
-});
+var svg = d3.select("#d3-container")
+  .attr("width", width)
+  .attr("height", height)
+  .append("svg")
+  .attr("width", chartWidth)
+  .attr("height", chartHeight)
+  .attr("transform", "translate("+[margin.left, margin.top]+")")
+  .call(d3.zoom().on("zoom", function () {
+          svg.attr("transform", d3.event.transform)
+  })).on("dblclick.zoom", null)
+  .append("g")
 
-sigma.parsers.json('ircouncil.it_sigma.json', {
-    container: 'sigma-container',
-    renderer: {
-        container: document.getElementById('sigma-container'),
-        type: 'canvas'
-    },
-    settings: {
-            edgeColor: 'default',
-            defaultEdgeColor: '#ccc',
-            animationsTime: 5000,
-            drawLabels: false,
-            scalingMode: 'inside',
-            sideMargin: 1,
-            minNodeSize: 5,
-            maxNodeSize: 30,
-            edgeHoverColor: 'edge',
-            drawLabels: false,
-            borderSize: 1
-        }
-    },
-
-    function(s) {
-
-        nodes = s.graph.nodes();
-        len = nodes.length;
-
-        a = s
-
-        for (i = 0; i < len; i++) {
-            nodes[i].x = Math.random();
-            nodes[i].y = Math.random();
-            nodes[i].size = nodes[i].degree;
-            nodes[i].color = colors[nodes[i].modularity];
-            nodes[i].label = nodes[i].id;
-        }
+// Define the div for the tooltip
+var div = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
 
 
-        // We first need to save the original colors of our
-        // nodes and edges, like this:
-        s.graph.nodes().forEach(function(n) {
-            n.originalColor = n.color;
-        });
-        s.graph.edges().forEach(function(e) {
-            e.originalColor = e.color;
-        });
-
-        // Start the layout:
-        s.startForceAtlas2({
-            worker: true,
-//            barnesHutOptimize: true,
-//            linLogMode: false,
-        	slowDown:1,
-//	        adjustSizes: false,
-//	        scalingRatio: 1000,
-	        gravity: 0.1,
-//            barnesHutTheta: 0.5,
-            outboundAttractionDistribution: true,
-//            autoSettings: false
-        });
+var colors = d3.schemeCategory10
 
 
-        //setTimeout(function() {s.stopForceAtlas2();}, 100)
-        //setTimeout(function() {s.startNoverlap();}, 5000)
+
+function normalizeSize(data, min=5, max=20){
+    dmax = d3.max(data, function(d){ return d.degree });
+    dmin = d3.min(data, function(d){ return d.degree });
+    data.forEach(function(d){
+        d['size'] = min + (((d.degree - dmin)*(max-min)) / (dmax - dmin))
+    })
+
+    return data
+}
 
 
-        // When a node is clicked, we check for each node
-        // if it is a neighbor of the clicked one. If not,
-        // we set its color as grey, and else, it takes its
-        // original color.
-        // We do the same for the edges, and we only keep
-        // edges that have both extremities colored.
-        s.bind('clickNode', function(e) {
-            var nodeId = e.data.node.id,
-                toKeep = s.graph.neighbors(nodeId);
-            toKeep[nodeId] = e.data.node;
 
-        s.graph.nodes().forEach(function(n) {
-            if (toKeep[n.id])
-                n.color = n.originalColor;
-            else
-                n.color = '#eee';
-        });
+function loadData(sitename){
+    svg.selectAll("*").remove();
+    d3.json('data/'+sitename, function(error, data) {
+        data.links.forEach(function(d){
+            d['value']=1;
+        })
+        datum = data
+        data.nodes = normalizeSize(data.nodes, min=5, max=20)
+        drawChart(data)
+    })
+}
 
-        s.graph.edges().forEach(function(e) {
-            if (toKeep[e.source] && toKeep[e.target])
-                e.color = e.originalColor;
-            else
-                e.color = '#eee';
+
+function reloadChart(){
+    var sitename = document.getElementById('sitename').value;
+    loadData(sitename)
+}
+
+
+
+function drawChart(data) {
+    simulation = d3.forceSimulation()
+        .force("link", d3.forceLink().id(function(d) { return d.index }))
+        .force("collide",d3.forceCollide( function(d){ return d.size }).iterations(1) )
+        .force("charge", d3.forceManyBody().strength(-300))
+        .force("center", d3.forceCenter(chartWidth / 2, chartHeight / 2))
+        .force("y", d3.forceY(0))
+        .force("x", d3.forceX(0))
+
+    link = svg.append("g")
+        .attr("class", "links")
+        .selectAll("line")
+        .data(data.links)
+        .enter()
+        .append("line")
+        .attr("stroke", "black")
+
+    node = svg.append("g")
+        .attr("class", "nodes")
+        .selectAll("circle")
+        .data(data.nodes)
+        .enter().append("circle")
+        .attr("r", function(d){  return d.size })
+        .style("fill", function(d){ return colors[d.modularity] })
+        .call(d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended))
+        .on("mouseenter", function(d) {
+            div.transition()
+                .duration(200)
+                .style("opacity", .9);
+            div.html(d.id)
+                .style("left", (d3.event.pageX) + "px")
+                .style("top", (d3.event.pageY - 28) + "px")
+                .style("width" ,d.id.length + 200);
+        })
+        .on("mouseleave", function(d) {
+            div.style("opacity", 0);
         });
 
-        // Since the data has been modified, we need to
-        // call the refresh method to make the colors
-        // update effective.
-        s.refresh();
+    // The label each node its node number from the networkx graph.
+
+    var ticked = function() {
+        link
+            .attr("x1", function(d) { return d.source.x; })
+            .attr("y1", function(d) { return d.source.y; })
+            .attr("x2", function(d) { return d.target.x; })
+            .attr("y2", function(d) { return d.target.y; });
+
+        node
+            .attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+    }
+
+    //Toggle stores whether the highlighting is on
+    var toggle = 0;
+    //Create an array logging what is connected to what
+    var linkedByIndex = {};
+    for (i = 0; i < data.nodes.length; i++) {
+        linkedByIndex[i + "," + i] = 1;
+    };
+
+    data.links.forEach(function (d) {
+        linkedByIndex[d.source + "," + d.target] = 1;
     });
 
-    // When the stage is clicked, we just color each
-    // node and edge with its original color.
-    s.bind('clickStage', function(e) {
-        s.graph.nodes().forEach(function(n) {
-            n.color = n.originalColor;
+    //This function looks up whether a pair are neighbours
+    function neighboring(a, b) {
+        return linkedByIndex[a.index + "," + b.index];
+    }
+    a = linkedByIndex
+    function connectedNodes() {
+        if (toggle == 0) {
+            //Reduce the opacity of all but the neighbouring nodes
+            d = d3.select(this).node().__data__;
+            node.style("opacity", function (o) {
+                return neighboring(d, o) | neighboring(o, d) ? 1 : 0.1;
+            });
+            link.style("opacity", function (o) {
+                return d.index==o.source.index | d.index==o.target.index ? 1 : 0.1;
+            });
+            //Reduce the op
+            toggle = 1;
+        } else {
+            //Put them back to opacity=1
+            node.style("opacity", 1);
+            link.style("opacity", 1);
+            toggle = 0;
+        }
+    }
+
+    simulation
+        .nodes(data.nodes)
+        .on("tick", ticked);
+
+    simulation.force("link")
+        .links(data.links);
+
+
+    node.on('dblclick', connectedNodes); //Added code
+
+
+    function dragstarted(d) {
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function dragged(d) {
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+    }
+
+    function dragended(d) {
+        if (!d3.event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+
+}
+
+
+
+    var optArray = [];
+    $(function () {
+        for (var i = 0; i < datum.nodes.length - 1; i++) {
+            optArray.push(datum.nodes[i].id);
+        }
+
+        optArray = optArray.sort();
+
+        $("#search").autocomplete({
+            source: optArray
         });
 
-        s.graph.edges().forEach(function(e) {
-            e.color = e.originalColor;
-        });
-
-        // Same as in the previous event:
-        s.refresh();
     });
-});
+
+function searchNode() {
+//find the node
+    var selectedVal = document.getElementById('search').value;
+    if (selectedVal == "none") {
+        node.style("stroke", "white").style("stroke-width", "1");
+    } else {
+        var node = svg.selectAll("circle")
+        .filter(function (d) {
+            return d.id != selectedVal;
+        });
+        node.style("opacity", "0");
+        var link = svg.selectAll(".links")
+        link.style("opacity", "0");
+        d3.selectAll("circle, .links")
+        .transition()
+        .duration(5000)
+        .style("opacity", 1);
+    }
+
+}

@@ -1,145 +1,35 @@
 <html>
 <head>
-    <style>
-body {background: #c9c9c9 }
-.nodes {stroke: #fff; stroke-width: 1.5px;}
-.links {stroke: #999; stroke-opacity: .6;}
-
-#d3-container {
-    width: 70%;
-    height: 100%;
-    float: right;
-}
-
-div#d3-container{
-    float: right;
-    border: 1px solid grey;
-}
-
-div.tooltip {
-    position: absolute;
-    text-align: center;
-    padding: 7px 10px;
-    font: 18px sans-serif;
-    background: white;
-    border: 0px;
-    border-radius: 4px;
-    pointer-events: none;
-}
-</style>
-    <link rel='stylesheet' href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css"> </link>
+    <link rel='stylesheet' href="static/css/jquery-ui.css"> </link>
+    <link rel='stylesheet' href="style.css"> </link>
 </head>
 <body>
+    <div id="d3-container"> </div>
 
-<div id="d3-container"> </div>
+    <div class="ui-widget">
+        <input id="search">
+            <button type="button" onclick="searchNode()">Search</button>
+    </div>
+    <div class="ui-widget">
+        <input id="sitename">
+            <button type="button" onclick="reloadChart()">Load</button>
+    </div>
+    <div class="ui-widget">
+        <button type="button" onclick="simulation.restart()">Start</button>
+        <button type="button" onclick="simulation.stop()">Stop</button>
+    </div>
 
-<div class="ui-widget">
-   <input id="search">
-    <button type="button" onclick="searchNode()">Search</button>
-</div>
-<div class="ui-widget">
-   <input id="sitename">
-    <button type="button" onclick="reloadChart()">Load</button>
-</div>
-<div class="ui-widget">
-    <button type="button" onclick="simulation.restart()">Start</button>
-    <button type="button" onclick="simulation.stop()">Stop</button>
-</div>
+    <script type='text/javascript' src="static/js/jquery-3.2.1.min.js"></script>
+    <script type='text/javascript' src="static/js/jquery-ui.min.js"> </script>
+    <script src="static/js/d3.v4.js"></script>
+    <script src="graph.js"> </script>
 
-<script
-  src="https://code.jquery.com/jquery-3.2.1.min.js"
-  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-  crossorigin="anonymous"></script>
-<script type='text/javascript' src="http://code.jquery.com/ui/1.11.0/jquery-ui.min.js"> </script>
-<script src="assets/js/pixi.min.js"> </script>
-<script src="https://d3js.org/d3.v4.js"></script>
-<script src="d3graph.js"> </script>
 
-<script>
-
-    var datum
-    setSize('#d3-container')
-
-    var sitename = "ircouncil.it_d3.json"
-
-    function loadData(sitename){
-        svg.selectAll("*").remove();
-        d3.json(sitename, function(error, data) {
-        data.links.forEach(function(d){
-            d['value']=1;
-        datum = data
-
-        })
-        data.nodes = normalizeSize(data.nodes, min=5, max=20)
-        drawChart(data)
-    })
-    }
-
-    function reloadChart(){
-        var sitename = document.getElementById('sitename').value;
+    <script>
+        var datum
+        var sitename = "ircouncil.it_d3.json"
         loadData(sitename)
-    }
+    </script>
 
-    loadData(sitename)
-
-
-
-
-    var optArray = [];
-    $(function () {
-        for (var i = 0; i < datum.nodes.length - 1; i++) {
-            optArray.push(datum.nodes[i].id);
-        }
-
-        optArray = optArray.sort();
-
-        $("#search").autocomplete({
-            source: optArray
-        });
-
-    });
-
-    function searchNode() {
-    //find the node
-        var selectedVal = document.getElementById('search').value;
-        if (selectedVal == "none") {
-            node.style("stroke", "white").style("stroke-width", "1");
-        } else {
-            var node = svg.selectAll("circle")
-            .filter(function (d) {
-                return d.id != selectedVal;
-            });
-            node.style("opacity", "0");
-            var link = svg.selectAll(".links")
-            link.style("opacity", "0");
-            d3.selectAll("circle, .links")
-            .transition()
-            .duration(5000)
-            .style("opacity", 1);
-        }
-
-
-
-}
-
-    //adjust threshold
-    function threshold(thresh) {
-        datum.links.splice(0, datum.links.length);
-            for (var i = 0; i < datum.links.length; i++) {
-                if (datum.links[i].value > thresh) {graph.links.push(datum.links[i]);}
-            }
-        restart();
-    }
-    //Restart the visualisation after any node and link changes
-    function restart() {
-        link = link.data(datum.links);
-        link.exit().remove();
-        link.enter().insert("line", ".node").attr("class", "link");
-        node = node.data(datum.nodes);
-        node.enter().insert("circle", ".cursor").attr("class", "node").attr("r", 5).call(simulation.drag);
-        simulation.restart();
-    }
-
-</script>
 </body>
 </html>
