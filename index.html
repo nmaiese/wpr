@@ -1,21 +1,27 @@
 <html>
 <head>
     <style>
-body {background: #6c6c6c }
-.node {stroke: #fff; stroke-width: 1.5px;}
-.link {stroke: #999; stroke-opacity: .6;}
+body {background: #c9c9c9 }
+.nodes {stroke: #fff; stroke-width: 1.5px;}
+.links {stroke: #999; stroke-opacity: .6;}
 
 #d3-container {
-    width: 900px;
-    height: 500px;
+    width: 70%;
+    height: 100%;
+    float: right;
+}
+
+div#d3-container{
+    float: right;
+    border: 1px solid grey;
 }
 
 div.tooltip {
     position: absolute;
     text-align: center;
-    padding: 5px 2px;
-    font: 14px sans-serif;
-    background: lightsteelblue;
+    padding: 7px 10px;
+    font: 18px sans-serif;
+    background: white;
     border: 0px;
     border-radius: 4px;
     pointer-events: none;
@@ -26,9 +32,18 @@ div.tooltip {
 <body>
 
 <div id="d3-container"> </div>
+
 <div class="ui-widget">
    <input id="search">
     <button type="button" onclick="searchNode()">Search</button>
+</div>
+<div class="ui-widget">
+   <input id="sitename">
+    <button type="button" onclick="reloadChart()">Load</button>
+</div>
+<div class="ui-widget">
+    <button type="button" onclick="simulation.restart()">Start</button>
+    <button type="button" onclick="simulation.stop()">Stop</button>
 </div>
 
 <script
@@ -36,6 +51,7 @@ div.tooltip {
   integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
   crossorigin="anonymous"></script>
 <script type='text/javascript' src="http://code.jquery.com/ui/1.11.0/jquery-ui.min.js"> </script>
+<script src="assets/js/pixi.min.js"> </script>
 <script src="https://d3js.org/d3.v4.js"></script>
 <script src="d3graph.js"> </script>
 
@@ -43,11 +59,31 @@ div.tooltip {
 
     var datum
     setSize('#d3-container')
-    d3.json("ircouncil.it_d3.json", function(error, data) {
+
+    var sitename = "ircouncil.it_d3.json"
+
+    function loadData(sitename){
+        svg.selectAll("*").remove();
+        d3.json(sitename, function(error, data) {
+        data.links.forEach(function(d){
+            d['value']=1;
         datum = data
+
+        })
         data.nodes = normalizeSize(data.nodes, min=5, max=20)
         drawChart(data)
     })
+    }
+
+    function reloadChart(){
+        var sitename = document.getElementById('sitename').value;
+        loadData(sitename)
+    }
+
+    loadData(sitename)
+
+
+
 
     var optArray = [];
     $(function () {
@@ -81,7 +117,29 @@ div.tooltip {
             .duration(5000)
             .style("opacity", 1);
         }
+
+
+
+}
+
+    //adjust threshold
+    function threshold(thresh) {
+        datum.links.splice(0, datum.links.length);
+            for (var i = 0; i < datum.links.length; i++) {
+                if (datum.links[i].value > thresh) {graph.links.push(datum.links[i]);}
+            }
+        restart();
     }
+    //Restart the visualisation after any node and link changes
+    function restart() {
+        link = link.data(datum.links);
+        link.exit().remove();
+        link.enter().insert("line", ".node").attr("class", "link");
+        node = node.data(datum.nodes);
+        node.enter().insert("circle", ".cursor").attr("class", "node").attr("r", 5).call(simulation.drag);
+        simulation.restart();
+    }
+
 </script>
 </body>
 </html>

@@ -123,8 +123,6 @@ if __name__ == "__main__":
         G.node[ix]['degree'] = deg
         G.node[ix]['parity'] = (1 - deg % 2)
 
-
-
     for ix, node in part.items():
         G.node[ix]['modularity'] = part[ix]
 

@@ -1,18 +1,37 @@
-var width,height
-var chartWidth, chartHeight
-var margin
-var svg = d3.select("#d3-container").append("svg")
-var chartLayer = svg.append("g").classed("chartLayer", true)
-var colors = d3.schemeCategory10
-var a, b
 var node
 var link
 var simulation
+
+
+var width = Math.min(document.documentElement.clientWidth, window.innerWidth || 0)*70/100;
+var height = Math.min(document.documentElement.clientHeight, window.innerHeight || 0)-20;
+
+margin = {top:0, left:0, bottom:0, right:0 }
+chartWidth = width - (margin.left+margin.right)
+chartHeight = height - (margin.top+margin.bottom)
+
+var svg = d3.select("#d3-container")
+  .attr("width", width)
+  .attr("height", height)
+  .append("svg")
+  .attr("width", chartWidth)
+  .attr("height", chartHeight)
+  .attr("transform", "translate("+[margin.left, margin.top]+")")
+  .call(d3.zoom().on("zoom", function () {
+          svg.attr("transform", d3.event.transform)
+  })).on("dblclick.zoom", null)
+  .append("g")
 
 // Define the div for the tooltip
 var div = d3.select("body").append("div")
     .attr("class", "tooltip")
     .style("opacity", 0);
+
+
+
+var colors = d3.schemeCategory10
+var a, b
+
 
 
 
@@ -29,22 +48,8 @@ function normalizeSize(data, min=5, max=20){
 
 
 function setSize(data) {
-    var width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0) -50;
-    var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0) -50;
-
-    margin = {top:0, left:0, bottom:0, right:0 }
 
 
-    chartWidth = width - (margin.left+margin.right)
-    chartHeight = height - (margin.top+margin.bottom)
-
-    svg.attr("width", width).attr("height", height)
-
-
-    chartLayer
-        .attr("width", chartWidth)
-        .attr("height", chartHeight)
-        .attr("transform", "translate("+[margin.left, margin.top]+")")
 
 }
 
@@ -52,7 +57,7 @@ function drawChart(data) {
     simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.index }))
         .force("collide",d3.forceCollide( function(d){ return d.size }).iterations(1) )
-        .force("charge", d3.forceManyBody().strength(-200))
+        .force("charge", d3.forceManyBody().strength(-300))
         .force("center", d3.forceCenter(chartWidth / 2, chartHeight / 2))
         .force("y", d3.forceY(0))
         .force("x", d3.forceX(0))
@@ -76,7 +81,7 @@ function drawChart(data) {
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended))
-        .on("mouseover", function(d) {
+        .on("mouseenter", function(d) {
             div.transition()
                 .duration(200)
                 .style("opacity", .9);
@@ -85,10 +90,10 @@ function drawChart(data) {
                 .style("top", (d3.event.pageY - 28) + "px")
                 .style("width" ,d.id.length + 200);
         })
-        .on("mouseout", function(d) {
+        .on("mouseleave", function(d) {
             div.style("opacity", 0);
-        })
-        .on('click', connectedNodes);
+        });
+
     // The label each node its node number from the networkx graph.
 
     var ticked = function() {
@@ -169,55 +174,3 @@ function drawChart(data) {
     }
 
 }
-
-
-//
-//d3.json("ircouncil.it.json", function(error, graph) {
-//    // Within this block, the network has been loaded
-//    // and stored in the 'graph' object.
-//
-//    // We load the nodes and links into the force-directed
-//    // graph and initialise the dynamics.
-//    force.nodes(graph.nodes)
-//        .links(graph.links)
-//        .start();
-//
-//    // We create a < line> SVG element for each link
-//    // in the graph.
-//    var link = svg.selectAll(".link")
-//        .data(graph.links)
-//        .enter().append("line")
-//        .attr("class", "link");
-//
-//    // We create a < circle> SVG element for each node
-//    // in the graph, and we specify a few attributes.
-//    var node = svg.selectAll(".node")
-//        .data(graph.nodes)
-//        .enter().append("circle")
-//        .attr("class", "node")
-//        .attr("r", 5)  // radius
-//        .style("fill", function(d) {
-//            // We colour the node depending on the degree.
-//            return color(d.degree);
-//        })
-//        .call(force.drag);
-//
-//    // The label each node its node number from the networkx graph.
-//    node.append("title")
-//        .text(function(d) { return d.id; });
-//
-//
-//
-//    // We bind the positions of the SVG elements
-//    // to the positions of the dynamic force-directed graph,
-//    // at each time step.
-//    force.on("tick", function() {
-//        link.attr("x1", function(d) { return d.source.x; })
-//            .attr("y1", function(d) { return d.source.y; })
-//            .attr("x2", function(d) { return d.target.x; })
-//            .attr("y2", function(d) { return d.target.y; });
-//
-//        node.attr("cx", function(d) { return d.x; })
-//            .attr("cy", function(d) { return d.y; });
-//    });
-//});
