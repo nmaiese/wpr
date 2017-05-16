@@ -45,13 +45,11 @@ function setSize(data) {
 
 }
 
-
-
 function drawChart(data) {
     var simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.index }))
         .force("collide",d3.forceCollide( function(d){ return d.size }).iterations(1) )
-        .force("charge", d3.forceManyBody().strength(-400))
+        .force("charge", d3.forceManyBody().strength(-200))
         .force("center", d3.forceCenter(chartWidth / 2, chartHeight / 2))
         .force("y", d3.forceY(0))
         .force("x", d3.forceX(0))
@@ -63,7 +61,6 @@ function drawChart(data) {
         .enter()
         .append("line")
         .attr("stroke", "black")
-
 
     var node = svg.append("g")
         .attr("class", "nodes")
@@ -94,7 +91,6 @@ function drawChart(data) {
         .text(function(d) { return "Node: " + d.id + "\n" + "Degree: " + d.degree + "\n" });
 
 
-
     var ticked = function() {
         link
             .attr("x1", function(d) { return d.source.x; })
@@ -109,7 +105,6 @@ function drawChart(data) {
 
     //Toggle stores whether the highlighting is on
     var toggle = 0;
-
 
     function connectedNodes() {
         if (toggle == 0) {

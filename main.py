@@ -7,7 +7,6 @@ import networkx as nx
 import community
 from networkx.readwrite import json_graph
 
-
 IGNORED_HREF = ['#', 'javascript:;', 'javascript:void(0)']
 
 def detect_domain(url):
@@ -105,9 +104,10 @@ class WPR(object):
 
 
 if __name__ == "__main__":
-    #base_url = 'https://enigaseluce.com'
-    base_url = 'https://www.groupm.com'
+    base_url = 'https://enigaseluce.com'
+    #base_url = 'https://www.groupm.com'
     base_url = 'http://www.ircouncil.it/'
+    base_url = 'http://www.multicentrum.it/'
     wpr = WPR(base_url)
     wpr.navigate_website('/', 2)
     pd.DataFrame(wpr.connections).to_csv(wpr.domain + '.csv', encoding='utf-8')
@@ -129,8 +129,17 @@ if __name__ == "__main__":
 
 
     data = json_graph.node_link_data(G)
-    with open(wpr.domain + '.json', 'w') as f:
+    with open(wpr.domain + '_d3.json', 'w') as f:
         json.dump(data, f, indent=4)
+
+
+    nodes = data['nodes']
+    edges = wpr.connections.to_dict(orient='records')
+    graph = {'nodes': nodes, 'edges': edges }
+
+
+    with open(wpr.domain + '_sigma.json', 'w') as f:
+        json.dump(graph, f, indent=4)
 
 
 

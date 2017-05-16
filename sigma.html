@@ -1,0 +1,40 @@
+<html>
+<head>
+<style>
+    #sigma-container {
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      position: absolute;
+    }
+
+    button{
+        position: fixed;
+        z-index: 10000;
+        cursor: pointer;
+    }
+
+</style>
+</head>
+<body>
+
+<button style="top: 10px;" onclick="a.startForceAtlas2()">start</button>
+<button style="top: 10px;left: 60px;" onclick="a.stopForceAtlas2()">stop</button>
+<div id="sigma-container"></div>
+
+
+<script src="assets/js/sigma.js"></script>
+<script src="assets/js/sigma.parsers.json.min.js"></script>
+<script src="assets/js/sigma.layout.forceAtlas2.min.js"></script>
+<script src="assets/js/sigma.layout.noverlap.js"></script>
+<script src="assets/js/sigma.plugins.animate.js"></script>
+<script src="graph.js"> </script>
+
+<script>
+
+
+</script>
+
+</body>
+</html>
