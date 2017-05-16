@@ -1,0 +1,29 @@
+body {background: #c9c9c9 }
+.nodes {stroke: #fff; stroke-width: 1.5px;}
+.links {stroke: #999; stroke-opacity: .6;}
+
+#d3-container {
+    width: 70%;
+    height: 100%;
+    float: right;
+}
+
+div#d3-container{
+    float: right;
+    border: 1px solid grey;
+}
+
+div.tooltip {
+    position: absolute;
+    text-align: center;
+    padding: 7px 10px;
+    font: 18px sans-serif;
+    background: white;
+    border: 0px;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.ui-widget {
+    padding: 10px;
+}
