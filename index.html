@@ -1,6 +1,6 @@
 <html>
 <head>
-<style>
+    <style>
 body {background: #6c6c6c }
 .node {stroke: #fff; stroke-width: 1.5px;}
 .link {stroke: #999; stroke-opacity: .6;}
@@ -20,30 +20,68 @@ div.tooltip {
     border-radius: 4px;
     pointer-events: none;
 }
-
-
 </style>
+    <link rel='stylesheet' href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css"> </link>
 </head>
 <body>
 
 <div id="d3-container"> </div>
+<div class="ui-widget">
+   <input id="search">
+    <button type="button" onclick="searchNode()">Search</button>
+</div>
 
-
-<script src="assets/js/sigma.js"></script>
-<script src="assets/js/sigma.parsers.json.min.js"></script>
+<script
+  src="https://code.jquery.com/jquery-3.2.1.min.js"
+  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+  crossorigin="anonymous"></script>
+<script type='text/javascript' src="http://code.jquery.com/ui/1.11.0/jquery-ui.min.js"> </script>
 <script src="https://d3js.org/d3.v4.js"></script>
-<!--<script src="graph.js"> </script>-->
 <script src="d3graph.js"> </script>
 
 <script>
+
     var datum
     setSize('#d3-container')
-    d3.json("ircouncil.it.json", function(error, data) {
+    d3.json("ircouncil.it_d3.json", function(error, data) {
         datum = data
         data.nodes = normalizeSize(data.nodes, min=5, max=20)
         drawChart(data)
     })
-</script>
 
+    var optArray = [];
+    $(function () {
+        for (var i = 0; i < datum.nodes.length - 1; i++) {
+            optArray.push(datum.nodes[i].id);
+        }
+
+        optArray = optArray.sort();
+
+        $("#search").autocomplete({
+            source: optArray
+        });
+
+    });
+
+    function searchNode() {
+    //find the node
+        var selectedVal = document.getElementById('search').value;
+        if (selectedVal == "none") {
+            node.style("stroke", "white").style("stroke-width", "1");
+        } else {
+            var node = svg.selectAll("circle")
+            .filter(function (d) {
+                return d.id != selectedVal;
+            });
+            node.style("opacity", "0");
+            var link = svg.selectAll(".links")
+            link.style("opacity", "0");
+            d3.selectAll("circle, .links")
+            .transition()
+            .duration(5000)
+            .style("opacity", 1);
+        }
+    }
+</script>
 </body>
 </html>

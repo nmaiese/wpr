@@ -72,7 +72,7 @@ class WPR(object):
 
     def get_links(self, url, protocol='https'):
         if self.protocol: protocol = self.protocol
-        self.base_url = protocol+'://' + self.domain + url
+        self.base_url = protocol+'://www.' + self.domain + url
         try:
             soup = get_soup(self.base_url)
             target_url = soup.findAll('a')
@@ -107,9 +107,9 @@ if __name__ == "__main__":
     base_url = 'https://enigaseluce.com'
     #base_url = 'https://www.groupm.com'
     base_url = 'http://www.ircouncil.it/'
-    base_url = 'http://www.multicentrum.it/'
+    base_url = 'http://www.coppelia.io/'
     wpr = WPR(base_url)
-    wpr.navigate_website('/', 2)
+    wpr.navigate_website('/', 3)
     pd.DataFrame(wpr.connections).to_csv(wpr.domain + '.csv', encoding='utf-8')
 
 
@@ -122,6 +122,7 @@ if __name__ == "__main__":
     for ix, deg in G.degree().items():
         G.node[ix]['degree'] = deg
         G.node[ix]['parity'] = (1 - deg % 2)
+
 
 
     for ix, node in part.items():

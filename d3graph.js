@@ -5,6 +5,9 @@ var svg = d3.select("#d3-container").append("svg")
 var chartLayer = svg.append("g").classed("chartLayer", true)
 var colors = d3.schemeCategory10
 var a, b
+var node
+var link
+var simulation
 
 // Define the div for the tooltip
 var div = d3.select("body").append("div")
@@ -26,8 +29,8 @@ function normalizeSize(data, min=5, max=20){
 
 
 function setSize(data) {
-    var width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-    var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    var width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0) -50;
+    var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0) -50;
 
     margin = {top:0, left:0, bottom:0, right:0 }
 
@@ -46,7 +49,7 @@ function setSize(data) {
 }
 
 function drawChart(data) {
-    var simulation = d3.forceSimulation()
+    simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.index }))
         .force("collide",d3.forceCollide( function(d){ return d.size }).iterations(1) )
         .force("charge", d3.forceManyBody().strength(-200))
@@ -54,7 +57,7 @@ function drawChart(data) {
         .force("y", d3.forceY(0))
         .force("x", d3.forceX(0))
 
-    var link = svg.append("g")
+    link = svg.append("g")
         .attr("class", "links")
         .selectAll("line")
         .data(data.links)
@@ -62,7 +65,7 @@ function drawChart(data) {
         .append("line")
         .attr("stroke", "black")
 
-    var node = svg.append("g")
+    node = svg.append("g")
         .attr("class", "nodes")
         .selectAll("circle")
         .data(data.nodes)
@@ -87,9 +90,6 @@ function drawChart(data) {
         })
         .on('click', connectedNodes);
     // The label each node its node number from the networkx graph.
-    node.append("title")
-        .text(function(d) { return "Node: " + d.id + "\n" + "Degree: " + d.degree + "\n" });
-
 
     var ticked = function() {
         link
@@ -105,27 +105,37 @@ function drawChart(data) {
 
     //Toggle stores whether the highlighting is on
     var toggle = 0;
+    //Create an array logging what is connected to what
+    var linkedByIndex = {};
+    for (i = 0; i < data.nodes.length; i++) {
+        linkedByIndex[i + "," + i] = 1;
+    };
 
+    data.links.forEach(function (d) {
+        linkedByIndex[d.source + "," + d.target] = 1;
+    });
+
+    //This function looks up whether a pair are neighbours
+    function neighboring(a, b) {
+        return linkedByIndex[a.index + "," + b.index];
+    }
+    a = linkedByIndex
     function connectedNodes() {
         if (toggle == 0) {
-            //Reduce the opacity of all but the neighbouring nodes to 0.3.
-            var d = d3.select(this).node().__data__;
-            //Reduce the opacity of all but the neighbouring edges to 0.8.
+            //Reduce the opacity of all but the neighbouring nodes
+            d = d3.select(this).node().__data__;
+            node.style("opacity", function (o) {
+                return neighboring(d, o) | neighboring(o, d) ? 1 : 0.1;
+            });
             link.style("opacity", function (o) {
-                return d.index==o.source.index | d.index==o.target.index ? 1 : 0.3;
+                return d.index==o.source.index | d.index==o.target.index ? 1 : 0.1;
             });
-            //Increases the stroke width of the neighbouring edges.
-            link.style("stroke-width", function (o) {
-                return d.index==o.source.index | d.index==o.target.index ? 1.5 : 0.3;
-            });
-            //Reset the toggle.
+            //Reduce the op
             toggle = 1;
-
         } else {
-            //Restore everything back to normal
+            //Put them back to opacity=1
             node.style("opacity", 1);
             link.style("opacity", 1);
-            link.style("stroke-width", 0.6);
             toggle = 0;
         }
     }
@@ -137,6 +147,8 @@ function drawChart(data) {
     simulation.force("link")
         .links(data.links);
 
+
+    node.on('dblclick', connectedNodes); //Added code
 
 
     function dragstarted(d) {
